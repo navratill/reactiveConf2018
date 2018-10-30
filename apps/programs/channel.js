@@ -76,12 +76,16 @@ export default class extends Component<Props> {
                                 ref={(list) => this._list = list}
                                 renderItem={this._renderChannel}
                                 requestData={(request: ListRequest) => request.completeWithData(unwrapData(data)) }
-                                requestDataAfter={(request: ListRequest) => fetchMore({
-                                    variables: { channel, from: request.item.data.endTimestamp, to: getTimestamp(4, request.item.data.endTimestamp) },
-                                    updateQuery: (previousResult, { fetchMoreResult }) => {
-                                        request.completeWithData(unwrapData(fetchMoreResult, 1));
-                                    }
-                                })}
+                                requestDataAfter={(request: ListRequest) => {
+                                    request.update([{loading: true}, {loading: true}, {loading: true}]);
+
+                                    fetchMore({
+                                        variables: { channel, from: request.item.data.endTimestamp, to: getTimestamp(4, request.item.data.endTimestamp) },
+                                        updateQuery: (previousResult, { fetchMoreResult }) => {
+                                            setInterval(() => request.completeWithData(unwrapData(fetchMoreResult, 1)), 2000);
+                                        }
+                                    });
+                                }}
                                 requestDataBefore={(request: ListRequest) => fetchMore({
                                     variables: { channel, from: getTimestamp(-4, request.item.data.startTimestamp), to: request.item.data.startTimestamp },
                                     updateQuery: (previousResult, { fetchMoreResult }) => {
@@ -108,10 +112,16 @@ export default class extends Component<Props> {
                 style={styles.programContainer}
                 underlayColor='#1a1a1a'
             >
-                <View style={styles.program} >
-                    <Text numberOfLines={1} style={styles.programName}>{item.data.originalName}</Text>
-                    <Text style={styles.programTime}>{timestampToString(item.data.startTimestamp)}</Text>
-                </View>
+                {
+                    item.data.loading ? 
+                        <View style={styles.program} />
+                    : (
+                        <View style={styles.program} >
+                            <Text numberOfLines={1} style={styles.programName}>{item.data.originalName}</Text>
+                            <Text style={styles.programTime}>{timestampToString(item.data.startTimestamp)}</Text>
+                        </View>
+                    )
+                }
             </TouchableHighlight>
         );
     }
