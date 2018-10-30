@@ -23,7 +23,7 @@ const timestampToString = (timestamp: number): string => {
 const unwrapData = (programData: any, removeFromBeginning: number = 0) => {
     if(!programData.channels.edges[0].node.programs) return [];
 
-    return programData.channels.edges[0].node.programs.splice(removeFromBeginning);
+    return programData.channels.edges[0].node.programs.slice(removeFromBeginning, -1);
 }
 
 const PROGRAMS = gql`
@@ -51,6 +51,7 @@ type Props = {
 export default class extends Component<Props> {
 
     _from: number;
+    _list: InfinityList;
     _to: number;
 
     constructor(props) {
@@ -71,13 +72,33 @@ export default class extends Component<Props> {
 
                         return (
                             <InfinityList 
-                                style={{ width: '100%', height: '20%', top: '40%' }}
                                 listType={ListTypeHorizontal}
+                                pivot={{ x: 0.5 }}
+                                ref={(list) => this._list = list }
                                 requestData={ (request: ListRequest) => request.update(unwrapData(data)) }
+                                requestDataAfter={(request: ListRequest ) => {
+                                    fetchMore({
+                                        variables: { channel, from: request.item.data.endTimestamp, to: getTimestamp(4, request.item.data.endTimestamp) },
+                                        updateQuery: (prev, { fetchMoreResult }) => {
+                                            request.update(unwrapData(fetchMoreResult, 1));
+                                            request.complete();
+                                        }
+                                    })
+                                }}
+                                requestDataBefore={(request) => {
+                                    fetchMore({
+                                        variables: { channel, from: getTimestamp(-4, request.item.data.startTimestamp), to: request.item.data.startTimestamp },
+                                        updateQuery: (prev, { fetchMoreResult }) => { 
+                                            request.update(unwrapData(fetchMoreResult)); 
+                                            request.complete();
+                                        }
+                                    })
+                                }}
                                 requestKey={(program) => program.id}
                                 requestSize={() => 400}
                                 requestPadding={ () => 10 }
-                                renderItem={(layoutItem) => this._renderChannel({ item: layoutItem.data })}
+                                renderItem={this._renderChannel}
+                                style={{ width: '100%', height: '20%', top: '40%' }}
                             />
                         );
                     }}
@@ -86,16 +107,17 @@ export default class extends Component<Props> {
         );
     }
 
-    _renderChannel = ({ item, index }) => {
+    _renderChannel = (item) => {
         return (
             <TouchableHighlight
-                onPress={() => console.log('onClick:', item.originalName)}
+                onPress={() => console.log('onClick:', item.data.originalName)}
+                onPressIn={() => this._list.scrollTo(item, { animated: true })}
                 style={styles.programContainer}
                 underlayColor='#1a1a1a'
             >
                 <View style={styles.program} >
-                    <Text numberOfLines={1} style={styles.programName}>{item.originalName}</Text>
-                    <Text style={styles.programTime}>{timestampToString(item.startTimestamp)}</Text>
+                    <Text numberOfLines={1} style={styles.programName}>{item.data.originalName}</Text>
+                    <Text style={styles.programTime}>{timestampToString(item.data.startTimestamp)}</Text>
                 </View>
             </TouchableHighlight>
         );
