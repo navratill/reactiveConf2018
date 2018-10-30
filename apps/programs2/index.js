@@ -7,7 +7,8 @@ import { ApolloProvider } from 'react-apollo';
 import Channel from './channel';
 
 const apolloClient = new ApolloClient({
-    link: new HttpLink({ uri: 'http://sales420.nangu.tv:3000/graphql' }),
+    // link: new HttpLink({ uri: 'http://sales420.nangu.tv:3000/graphql' }),
+    link: new HttpLink({ uri: 'http://graphql01.gtm-stage.orange.sk:3000/graphql' }),
     cache: new InMemoryCache(),
 });
 
@@ -21,7 +22,7 @@ export default class extends Component {
         return (
             <ApolloProvider client={apolloClient}>
                 <Channel 
-                    channel="Q2hhbm5lbDpjdDFoZA=="
+                    channel="Q2hhbm5lbDprYW5hbDFfbWFya2l6YV9hYnI="
                     from={getTimestamp(-12)}
                     to={getTimestamp(12)}    
                 />

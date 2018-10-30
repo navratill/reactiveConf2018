@@ -62,9 +62,10 @@ export default class extends Component<Props> {
                     if(loading) return null;
 
                     return (
-                        <View style={{ width: '100%', height: '50%', top: '25%' }}>
+                        <View style={{ width: '100%', height: '20%', top: '40%' }}>
                             <InfinityList
                                 listType={ListTypeHorizontal}
+                                pivot={{ x: 0.5, y: 0 }}
                                 ref={(list) => this._list = list}
                                 requestPadding={() => 20 }
                                 requestKey={(item) => item.id }
@@ -89,7 +90,7 @@ export default class extends Component<Props> {
                                         }
                                     })
                                 }}
-                                requestSize={({ startTimestamp, endTimestamp }) => ((endTimestamp-startTimestamp)/60/1000)*10 }
+                                requestSize={({ startTimestamp, endTimestamp }) => 500 } //((endTimestamp-startTimestamp)/60/1000)*10 }
                                 renderItem={this._renderChannel}
                                 style={{ height: '100%', backgroundColor: 'green' }}
                             />
@@ -103,20 +104,49 @@ export default class extends Component<Props> {
     _renderChannel = (item) => {
         return (
             <TouchableHighlight
-                hasTVPreferredFocus={false}
+                onPress={() => console.log('onClick:', item.originalName)}
                 onPressIn={() => {
                     this._list.highlight(item);
                     this._list.scrollTo(item, { animated: true });
                 }}
-                onPress={() => console.log('onClick:', item.data.originalName)}
-                underlayColor={item.highlighted ? 'blue' : 'yellow'}
+                style={{ height: '100%', width: 400, padding: 2 }}
             >
-                <View style={{ justifyContent: 'center', alignContent: 'center', backgroundColor: item.highlighted ? 'blue' : 'red'}}>
-                    <Text numberOfLines={1}>{item.data.originalName}</Text>
-                    <Text>{timestampToString(item.data.startTimestamp)}</Text>
+                <View 
+                    style={{height: '100%', justifyContent: 'center', alignContent: 'center', padding: 20,  backgroundColor: '#3d3d3d', borderRadius: 6}}
+                >
+                    <Text 
+                        numberOfLines={1} 
+                        style={{ color: 'white', fontSize: 30, fontWeight: 'bold' }}
+                    >
+                        {item.data.originalName}
+                    </Text>
+                    <Text 
+                        style={{ color: 'white', fontSize: 15 }}
+                    >
+                        {timestampToString(item.data.startTimestamp)}
+                    </Text>
                 </View>
             </TouchableHighlight>
         );
     }
+
+    // _renderChannel = (item) => {
+    //     return (
+    //         <TouchableHighlight
+    //             hasTVPreferredFocus={false}
+    //             onPressIn={() => {
+    //                 this._list.highlight(item);
+    //                 this._list.scrollTo(item, { animated: true });
+    //             }}
+    //             onPress={() => console.log('onClick:', item.data.originalName)}
+    //             underlayColor={item.highlighted ? 'blue' : 'yellow'}
+    //         >
+    //             <View style={{ justifyContent: 'center', alignContent: 'center', backgroundColor: item.highlighted ? 'blue' : 'red'}}>
+    //                 <Text numberOfLines={1}>{item.data.originalName}</Text>
+    //                 <Text>{timestampToString(item.data.startTimestamp)}</Text>
+    //             </View>
+    //         </TouchableHighlight>
+    //     );
+    // }
 
 }

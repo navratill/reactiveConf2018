@@ -1,17 +1,27 @@
+// @flow
+
 import gql from 'graphql-tag';
 import React, { Component } from 'react';
 import { Query } from 'react-apollo';
-import { FlatList, Text, TouchableHighlight, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
+
+const getTimestamp = (shiftHour: number, originalTimestamp: ?number): number => {
+    const timestamp = originalTimestamp ? originalTimestamp : new Date().getTime();
+    return timestamp+(shiftHour*60*60*1000);
+}
 
 const timestampToString = (timestamp: number): string => {
     const date = new Date(timestamp);
-    var h = date.getHours();
-    var m = date.getMinutes();
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
 
-    h = ( h < 10 ) ? '0' + h : h;
-    m = ( m < 10 ) ? '0' + m : m;
+    return `${date.getDate()}/${date.getMonth()} ${hours < 10 ? '0'+hours : hours}:${minutes < 10 ? '0'+minutes : minutes}`;
+}
 
-    return `${date.getDate()}/${date.getMonth()} ${h}:${m}`;
+const unwrapData = (programData: any, removeFromBeginning: number = 0) => {
+    if(!programData.channels.edges[0].node.programs) return [];
+
+    return programData.channels.edges[0].node.programs.splice(removeFromBeginning);
 }
 
 const PROGRAMS = gql`
@@ -34,8 +44,6 @@ query Programs($channel: [ID], $from: Float, $to: Float) {
 
 type Props = {
     channel: string,
-    from: number,
-    to: number,
 };
 
 export default class extends Component<Props> {
@@ -46,8 +54,8 @@ export default class extends Component<Props> {
     constructor(props) {
         super(props);
 
-        this._from = props.from;
-        this._to = props.to;
+        this._from = getTimestamp(-4);
+        this._to = getTimestamp(4);
     }
 
     render() {
@@ -59,30 +67,12 @@ export default class extends Component<Props> {
                     if(loading) return null;
 
                     return (
-                        <View style={{ width: '100%', height: '50%', top: '25%' }}>
+                        <View style={{ width: '100%', height: '20%', top: '40%' }}>
                             <FlatList
-                                data={data.channels.edges[0].node.programs}
+                                data={unwrapData(data)}
                                 horizontal
                                 keyExtractor={({ id }) => id }
                                 renderItem={this._renderChannel}
-                                onEndReached={() => {
-                                    this._from = this._to;
-                                    this._to = this._to+12*60*60*1000;
-                                
-                                    fetchMore({
-                                        variables: { channel, from: this._from, to: this._to },
-                                        updateQuery: (prev, { fetchMoreResult }) => {
-                                            if (!fetchMoreResult || !fetchMoreResult.channels.edges[0].node.programs) return prev;
-
-                                            fetchMoreResult.channels.edges[0].node.programs = [
-                                                ...prev.channels.edges[0].node.programs,
-                                                ...fetchMoreResult.channels.edges[0].node.programs,
-                                            ];
-
-                                            return fetchMoreResult;
-                                        }
-                                    })
-                                }}
                                 onEndReachedThreshold={0.1}
                             />
                         </View>
@@ -95,17 +85,40 @@ export default class extends Component<Props> {
     _renderChannel = ({ item, index }) => {
         return (
             <TouchableHighlight
-                hasTVPreferredFocus={index === 0}
                 onPress={() => console.log('onClick:', item.originalName)}
-                style={{ height: 150, padding: 20 }}
-                underlayColor='red'
+                style={styles.programContainer}
             >
-                <View style={{ justifyContent: 'center', alignContent: 'center'}}>
-                    <Text>{item.originalName}</Text>
-                    <Text>{timestampToString(item.startTimestamp)}</Text>
+                <View style={styles.program} >
+                    <Text numberOfLines={1} style={styles.programName}>{item.originalName}</Text>
+                    <Text style={styles.programTime}>{timestampToString(item.startTimestamp)}</Text>
                 </View>
             </TouchableHighlight>
         );
     }
 
 }
+
+const styles = StyleSheet.create({
+    programContainer: {
+        height: '100%', 
+        padding: 2,
+        width: 400, 
+    },
+    program: {
+        alignContent: 'center', 
+        backgroundColor: '#3d3d3d', 
+        borderRadius: 6,
+        height: '100%', 
+        justifyContent: 'center', 
+        padding: 20,  
+    },
+    programName: {
+        color: 'white',
+        fontSize: 30,
+        fontWeight: 'bold',
+    },
+    programTime: {
+        color: 'white',
+        fontSize: 15,
+    }
+});
