@@ -5,7 +5,10 @@
 // @flow
 //
 
+import type { LayoutItem as _LayoutItem } from './layouts/Layout';
 import InfinityList, { ListRequest, ListTypeHorizontal, ListTypeVertical,} from './InfinityList';
+
+export type LayoutItem = _LayoutItem;
 
 export {
     InfinityList,

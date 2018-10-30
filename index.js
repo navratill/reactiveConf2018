@@ -6,6 +6,6 @@ import {AppRegistry} from 'react-native';
 import DefaultApp from './apps/default';
 import MovieApp from './apps/movie';
 import ProgramApp from './apps/programs';
-import ProgramApp2 from './apps/programs2';
+import EpgApp from './apps/epg';
 
-AppRegistry.registerComponent(appName, () => ProgramApp);
+AppRegistry.registerComponent(appName, () => DefaultApp);

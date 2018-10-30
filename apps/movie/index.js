@@ -8,6 +8,7 @@ import Genre from './genre';
 
 const apolloClient = new ApolloClient({
     link: new HttpLink({ uri: 'http://sales420.nangu.tv:3000/graphql' }),
+    // link: new HttpLink({ uri: 'http://graphql01.gtm-stage.orange.sk:3000/graphql' }),
     cache: new InMemoryCache(),
 });
 
@@ -16,7 +17,7 @@ export default class extends Component {
     render = () => {
         return (
             <ApolloProvider client={apolloClient}>
-                <Genre tag="VGFnOjM=" />
+                <Genre tag="VGFnOi0x" />
             </ApolloProvider>
         );
     }

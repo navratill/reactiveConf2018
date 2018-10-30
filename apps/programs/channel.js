@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import { FlatList, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
 
-import { InfinityList, ListRequest, ListTypeHorizontal } from '../../libs/infinityview';
+import { InfinityList, ListRequest, ListTypeHorizontal, type LayoutItem } from '../../libs/infinityview';
 
 const getTimestamp = (shiftHour: number, originalTimestamp: ?number): number => {
     const timestamp = originalTimestamp ? originalTimestamp : new Date().getTime();
@@ -71,35 +71,14 @@ export default class extends Component<Props> {
                         if(loading) return null;
 
                         return (
-                            <InfinityList 
-                                listType={ListTypeHorizontal}
-                                pivot={{ x: 0.5 }}
-                                ref={(list) => this._list = list }
-                                requestData={ (request: ListRequest) => request.update(unwrapData(data)) }
-                                requestDataAfter={(request: ListRequest ) => {
-                                    fetchMore({
-                                        variables: { channel, from: request.item.data.endTimestamp, to: getTimestamp(4, request.item.data.endTimestamp) },
-                                        updateQuery: (prev, { fetchMoreResult }) => {
-                                            request.update(unwrapData(fetchMoreResult, 1));
-                                            request.complete();
-                                        }
-                                    })
-                                }}
-                                requestDataBefore={(request) => {
-                                    fetchMore({
-                                        variables: { channel, from: getTimestamp(-4, request.item.data.startTimestamp), to: request.item.data.startTimestamp },
-                                        updateQuery: (prev, { fetchMoreResult }) => { 
-                                            request.update(unwrapData(fetchMoreResult)); 
-                                            request.complete();
-                                        }
-                                    })
-                                }}
-                                requestKey={(program) => program.id}
-                                requestSize={() => 400}
-                                requestPadding={ () => 10 }
-                                renderItem={this._renderChannel}
-                                style={{ width: '100%', height: '20%', top: '40%' }}
-                            />
+                            <View style={styles.channel}>
+                                <FlatList 
+                                    data={unwrapData(data)}
+                                    horizontal
+                                    keyExtractor={(program) => program.id}
+                                    renderItem={this._renderChannel}
+                                />
+                            </View>
                         );
                     }}
                 </Query>
@@ -107,17 +86,16 @@ export default class extends Component<Props> {
         );
     }
 
-    _renderChannel = (item) => {
+    _renderChannel = ({ item }) => {
         return (
             <TouchableHighlight
-                onPress={() => console.log('onClick:', item.data.originalName)}
-                onPressIn={() => this._list.scrollTo(item, { animated: true })}
+                onPress={() => console.log('onProgramSelect:', item.originalName)}
                 style={styles.programContainer}
                 underlayColor='#1a1a1a'
             >
                 <View style={styles.program} >
-                    <Text numberOfLines={1} style={styles.programName}>{item.data.originalName}</Text>
-                    <Text style={styles.programTime}>{timestampToString(item.data.startTimestamp)}</Text>
+                    <Text numberOfLines={1} style={styles.programName}>{item.originalName}</Text>
+                    <Text style={styles.programTime}>{timestampToString(item.startTimestamp)}</Text>
                 </View>
             </TouchableHighlight>
         );
@@ -130,9 +108,14 @@ const styles = StyleSheet.create({
         backgroundColor: '#292929', 
         flex: 1,
     },
+    channel: {
+        height: '20%', 
+        top: '40%',
+        width: '100%', 
+    },  
     programContainer: {
         borderRadius: 6,
-        height: '100%', 
+        height: '100%',
         padding: 5,
         width: 400, 
     },

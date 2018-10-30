@@ -83,6 +83,16 @@ export default class Request extends Observable {
         this._observers.map((observer) => { return observer.complete(optionalParams); });
     }
     /**
+     * Send updated data to request and call complete immediately. It will replace previous data which were sent by update method.
+     * @param  {any[]} data
+     * @param  {Object<any>} optionalParams
+     * @returns void
+     */
+    completeWithData(data: any[], optionalParams: Object<any>): void {
+        this.update(data, optionalParams);
+        this.complete(data, optionalParams);
+    }
+    /**
      * Send updated data to request. It will replace previous data which were sent by update method. It can be used for
      * preloading data first and after call the same method with final data. Don't forget to call complete method on the end.
      * @param  {any[]} data
