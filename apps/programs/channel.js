@@ -77,6 +77,25 @@ export default class extends Component<Props> {
                                     horizontal
                                     keyExtractor={(program) => program.id}
                                     renderItem={this._renderChannel}
+                                    onEndReached={() => {
+                                        this._from = this._to;
+                                        this._to = getTimestamp(4, this._to);
+
+                                        fetchMore({
+                                            variables: { channel, from: this._from, to: this._to },
+                                            updateQuery: (previousResult, { fetchMoreResult }) => {
+                                                if(!fetchMoreResult) return previousResult;
+
+                                                fetchMoreResult.channels.edges[0].node.programs = [
+                                                    ...unwrapData(previousResult),
+                                                    ...unwrapData(fetchMoreResult, 1),
+                                                ];    
+
+                                                return fetchMoreResult;
+                                            }
+                                        })
+                                    }}
+                                    onEndReachedThreshold={0.1}
                                 />
                             </View>
                         );

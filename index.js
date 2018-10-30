@@ -8,4 +8,4 @@ import MovieApp from './apps/movie';
 import ProgramApp from './apps/programs';
 import EpgApp from './apps/epg';
 
-AppRegistry.registerComponent(appName, () => DefaultApp);
+AppRegistry.registerComponent(appName, () => ProgramApp);
