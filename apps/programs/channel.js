@@ -71,33 +71,16 @@ export default class extends Component<Props> {
                         if(loading) return null;
 
                         return (
-                            <View style={styles.channel}>
-                                <FlatList 
-                                    data={unwrapData(data)}
-                                    horizontal
-                                    keyExtractor={(program) => program.id}
-                                    renderItem={this._renderChannel}
-                                    onEndReached={() => {
-                                        this._from = this._to;
-                                        this._to = getTimestamp(4, this._to);
-
-                                        fetchMore({
-                                            variables: { channel, from: this._from, to: this._to },
-                                            updateQuery: (previousResult, { fetchMoreResult }) => {
-                                                if(!fetchMoreResult) return previousResult;
-
-                                                fetchMoreResult.channels.edges[0].node.programs = [
-                                                    ...unwrapData(previousResult),
-                                                    ...unwrapData(fetchMoreResult, 1),
-                                                ];    
-
-                                                return fetchMoreResult;
-                                            }
-                                        })
-                                    }}
-                                    onEndReachedThreshold={0.1}
-                                />
-                            </View>
+                            <InfinityList 
+                                listType={ListTypeHorizontal}
+                                ref={(list) => this._list = list}
+                                renderItem={this._renderChannel}
+                                requestData={(request: ListRequest) => request.completeWithData(unwrapData(data)) }
+                                requestKey={(data) => data.id}
+                                requestSize={() => 400 }
+                                requestPadding={() => 5 }
+                                style={styles.channel}
+                            />
                         );
                     }}
                 </Query>
@@ -105,16 +88,17 @@ export default class extends Component<Props> {
         );
     }
 
-    _renderChannel = ({ item }) => {
+    _renderChannel = (item: LayoutItem) => {
         return (
             <TouchableHighlight
-                onPress={() => console.log('onProgramSelect:', item.originalName)}
+                onPress={() => console.log('onProgramSelect:', item.data.originalName)}
+                onPressIn={() => this._list.scrollTo(item, { animated: true })}
                 style={styles.programContainer}
                 underlayColor='#1a1a1a'
             >
                 <View style={styles.program} >
-                    <Text numberOfLines={1} style={styles.programName}>{item.originalName}</Text>
-                    <Text style={styles.programTime}>{timestampToString(item.startTimestamp)}</Text>
+                    <Text numberOfLines={1} style={styles.programName}>{item.data.originalName}</Text>
+                    <Text style={styles.programTime}>{timestampToString(item.data.startTimestamp)}</Text>
                 </View>
             </TouchableHighlight>
         );
