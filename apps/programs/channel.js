@@ -5,6 +5,8 @@ import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import { FlatList, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
 
+import { InfinityList, ListRequest, ListTypeHorizontal } from '../../libs/infinityview';
+
 const getTimestamp = (shiftHour: number, originalTimestamp: ?number): number => {
     const timestamp = originalTimestamp ? originalTimestamp : new Date().getTime();
     return timestamp+(shiftHour*60*60*1000);
@@ -62,41 +64,43 @@ export default class extends Component<Props> {
         const { channel } = this.props;
 
         return (
-            <Query query={PROGRAMS} variables={{ channel, from: this._from, to: this._to }}>
-                {({ data, error, loading, fetchMore, variables }) => {
-                    if(loading) return null;
+            <View style={styles.container}>
+                <Query query={PROGRAMS} variables={{ channel, from: this._from, to: this._to }}>
+                    {({ data, error, loading, fetchMore, variables }) => {
+                        if(loading) return null;
 
-                    return (
-                        <View style={{ width: '100%', height: '20%', top: '40%' }}>
-                            <FlatList
-                                data={unwrapData(data)}
-                                horizontal
-                                keyExtractor={({ id }) => id }
-                                renderItem={this._renderChannel}
-                                onEndReached={() => {
-                                    this._from = this._to;
-                                    this._to = getTimestamp(4, this._to);
-                                
-                                    fetchMore({
-                                        variables: { channel, from: this._from, to: this._to },
-                                        updateQuery: (prev, { fetchMoreResult }) => {
-                                            if (!fetchMoreResult) return prev;
+                        return (
+                            <View style={{ width: '100%', height: '20%', top: '40%' }}>
+                                <FlatList
+                                    data={unwrapData(data)}
+                                    horizontal
+                                    keyExtractor={({ id }) => id }
+                                    renderItem={this._renderChannel}
+                                    onEndReached={() => {
+                                        this._from = this._to;
+                                        this._to = getTimestamp(4, this._to);
+                                    
+                                        fetchMore({
+                                            variables: { channel, from: this._from, to: this._to },
+                                            updateQuery: (prev, { fetchMoreResult }) => {
+                                                if (!fetchMoreResult) return prev;
 
-                                            fetchMoreResult.channels.edges[0].node.programs = [
-                                                ...unwrapData(prev),
-                                                ...unwrapData(fetchMoreResult, 1),
-                                            ];
+                                                fetchMoreResult.channels.edges[0].node.programs = [
+                                                    ...unwrapData(prev),
+                                                    ...unwrapData(fetchMoreResult, 1),
+                                                ];
 
-                                            return fetchMoreResult;
-                                        }
-                                    })
-                                }}
-                                onEndReachedThreshold={0.1}
-                            />
-                        </View>
-                    );
-                }}
-            </Query>
+                                                return fetchMoreResult;
+                                            }
+                                        })
+                                    }}
+                                    onEndReachedThreshold={0.1}
+                                />
+                            </View>
+                        );
+                    }}
+                </Query>
+            </View>
         );
     }
 
@@ -105,6 +109,7 @@ export default class extends Component<Props> {
             <TouchableHighlight
                 onPress={() => console.log('onClick:', item.originalName)}
                 style={styles.programContainer}
+                underlayColor='#1a1a1a'
             >
                 <View style={styles.program} >
                     <Text numberOfLines={1} style={styles.programName}>{item.originalName}</Text>
@@ -117,9 +122,14 @@ export default class extends Component<Props> {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        backgroundColor: '#292929', 
+        flex: 1,
+    },
     programContainer: {
+        borderRadius: 6,
         height: '100%', 
-        padding: 2,
+        padding: 5,
         width: 400, 
     },
     program: {

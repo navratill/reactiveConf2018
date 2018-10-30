@@ -28,6 +28,7 @@ export default class extends Component<Props> {
         const { tag } = this.props;
 
         return (
+            <View style={{ backgroundColor: '#292929', flex: 1 }}>
             <Query query={MOVIES} variables={{ tagID: tag }}>
                 {({ data, error, loading }) => {
                     if(loading) return null;
@@ -45,6 +46,7 @@ export default class extends Component<Props> {
                     );
                 }}
             </Query>
+            </View>
         );
     }
 
