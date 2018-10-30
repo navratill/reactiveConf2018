@@ -3,20 +3,16 @@ import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import { FlatList, Text, TouchableHighlight, View } from 'react-native';
 
-const MOVIES = gql`
-query Movies($tagID: [ID]) {
-    taggedEntities(id: $tagID) {
-        edges {
-            node {
-                id
-                name
-                media {
-                    portrait
-                }
-            }
-        }
-    }
-}`;
+const timestampToString = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    var h = date.getHours();
+    var m = date.getMinutes();
+
+    h = ( h < 10 ) ? '0' + h : h;
+    m = ( m < 10 ) ? '0' + m : m;
+
+    return `${date.getDate()}/${date.getMonth()} ${h}:${m}`;
+}
 
 const PROGRAMS = gql`
 query Programs($channel: [ID], $from: Float, $to: Float) {
@@ -44,12 +40,21 @@ type Props = {
 
 export default class extends Component<Props> {
 
+    _from: number;
+    _to: number;
+
+    constructor(props) {
+        super(props);
+
+        this._from = props.from;
+        this._to = props.to;
+    }
+
     render() {
-        console.log('Channel.render!!!');
-        const { channel, from, to } = this.props;
+        const { channel } = this.props;
 
         return (
-            <Query query={PROGRAMS} variables={{ channel, from, to }}>
+            <Query query={PROGRAMS} variables={{ channel, from: this._from, to: this._to }}>
                 {({ data, error, loading, fetchMore, variables }) => {
                     if(loading) return null;
 
@@ -61,19 +66,19 @@ export default class extends Component<Props> {
                                 keyExtractor={({ id }) => id }
                                 renderItem={this._renderChannel}
                                 onEndReached={() => {
+                                    this._from = this._to;
+                                    this._to = this._to+12*60*60*1000;
+                                
                                     fetchMore({
-                                        variables: {
-                                            from: variables.to,
-                                            to: variables.to+12*60*60*1000,
-                                        },
+                                        variables: { channel, from: this._from, to: this._to },
                                         updateQuery: (prev, { fetchMoreResult }) => {
-                                            if (!fetchMoreResult) return prev;
+                                            if (!fetchMoreResult || !fetchMoreResult.channels.edges[0].node.programs) return prev;
 
                                             fetchMoreResult.channels.edges[0].node.programs = [
                                                 ...prev.channels.edges[0].node.programs,
                                                 ...fetchMoreResult.channels.edges[0].node.programs,
                                             ];
-                                            
+
                                             return fetchMoreResult;
                                         }
                                     })
@@ -88,8 +93,6 @@ export default class extends Component<Props> {
     }
 
     _renderChannel = ({ item, index }) => {
-        console.log('index: ', index, item);
-
         return (
             <TouchableHighlight
                 hasTVPreferredFocus={index === 0}
@@ -99,6 +102,7 @@ export default class extends Component<Props> {
             >
                 <View style={{ justifyContent: 'center', alignContent: 'center'}}>
                     <Text>{item.originalName}</Text>
+                    <Text>{timestampToString(item.startTimestamp)}</Text>
                 </View>
             </TouchableHighlight>
         );

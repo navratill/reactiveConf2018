@@ -8,4 +8,4 @@ import MovieApp from './apps/movie';
 import ProgramApp from './apps/programs';
 import ProgramApp2 from './apps/programs2';
 
-AppRegistry.registerComponent(appName, () => ProgramApp2);
+AppRegistry.registerComponent(appName, () => ProgramApp);

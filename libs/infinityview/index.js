@@ -5,3 +5,11 @@
 // @flow
 //
 
+import InfinityList, { ListRequest, ListTypeHorizontal, ListTypeVertical,} from './InfinityList';
+
+export {
+    InfinityList,
+    ListRequest,
+    ListTypeHorizontal,
+    ListTypeVertical,
+};

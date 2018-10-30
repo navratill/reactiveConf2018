@@ -3,20 +3,18 @@ import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import { FlatList, Text, TouchableHighlight, View } from 'react-native';
 
-const MOVIES = gql`
-query Movies($tagID: [ID]) {
-    taggedEntities(id: $tagID) {
-        edges {
-            node {
-                id
-                name
-                media {
-                    portrait
-                }
-            }
-        }
-    }
-}`;
+import { InfinityList, ListTypeHorizontal, ListRequest } from '../../libs/infinityview';
+
+const timestampToString = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    var h = date.getHours();
+    var m = date.getMinutes();
+
+    h = ( h < 10 ) ? '0' + h : h;
+    m = ( m < 10 ) ? '0' + m : m;
+
+    return `${date.getDate()}/${date.getMonth()} ${h}:${m}`;
+}
 
 const PROGRAMS = gql`
 query Programs($channel: [ID], $from: Float, $to: Float) {
@@ -44,41 +42,56 @@ type Props = {
 
 export default class extends Component<Props> {
 
+    _from: number;
+    _list: InfinityList;
+    _to: number;
+
+    constructor(props) {
+        super(props);
+
+        this._from = props.from;
+        this._to = props.to;
+    }
+
     render() {
-        console.log('Channel.render!!!');
-        const { channel, from, to } = this.props;
+        const { channel } = this.props;
 
         return (
-            <Query query={PROGRAMS} variables={{ channel, from, to }}>
+            <Query query={PROGRAMS} variables={{ channel, from: this._from, to: this._to }}>
                 {({ data, error, loading, fetchMore, variables }) => {
                     if(loading) return null;
 
                     return (
                         <View style={{ width: '100%', height: '50%', top: '25%' }}>
-                            <FlatList
-                                data={data.channels.edges[0].node.programs}
-                                horizontal
-                                keyExtractor={({ id }) => id }
-                                renderItem={this._renderChannel}
-                                onEndReached={() => {
+                            <InfinityList
+                                listType={ListTypeHorizontal}
+                                ref={(list) => this._list = list}
+                                requestPadding={() => 20 }
+                                requestKey={(item) => item.id }
+                                requestData={(request: ListRequest) => {
+                                    request.update(data.channels.edges[0].node.programs);
+                                }}
+                                requestDataAfter={(request: ListRequest) => {
+                                    console.log('data after?');
                                     fetchMore({
-                                        variables: {
-                                            from: variables.to,
-                                            to: variables.to+12*60*60*1000,
-                                        },
+                                        variables: { channel, from: this._to, to: this._to+12*60*60*1000 },
                                         updateQuery: (prev, { fetchMoreResult }) => {
-                                            if (!fetchMoreResult) return prev;
-
-                                            fetchMoreResult.channels.edges[0].node.programs = [
-                                                ...prev.channels.edges[0].node.programs,
-                                                ...fetchMoreResult.channels.edges[0].node.programs,
-                                            ];
-                                            
-                                            return fetchMoreResult;
+                                            request.update(fetchMoreResult.channels.edges[0].node.programs);
                                         }
                                     })
                                 }}
-                                onEndReachedThreshold={0.1}
+                                requestDataBefore={(request: ListRequest) => {
+                                    console.log('data before?');
+                                    fetchMore({
+                                        variables: { channel, from: this._from-12*60*60*1000, to: this._from },
+                                        updateQuery: (prev, { fetchMoreResult }) => {
+                                            request.update(fetchMoreResult.channels.edges[0].node.programs);
+                                        }
+                                    })
+                                }}
+                                requestSize={({ startTimestamp, endTimestamp }) => ((endTimestamp-startTimestamp)/60/1000)*10 }
+                                renderItem={this._renderChannel}
+                                style={{ height: '100%', backgroundColor: 'green' }}
                             />
                         </View>
                     );
@@ -87,18 +100,20 @@ export default class extends Component<Props> {
         );
     }
 
-    _renderChannel = ({ item, index }) => {
-        console.log('index: ', index, item);
-
+    _renderChannel = (item) => {
         return (
             <TouchableHighlight
-                hasTVPreferredFocus={index === 0}
-                onPress={() => console.log('onClick:', item.originalName)}
-                style={{ height: 150, padding: 20 }}
-                underlayColor='red'
+                hasTVPreferredFocus={false}
+                onPressIn={() => {
+                    this._list.highlight(item);
+                    this._list.scrollTo(item, { animated: true });
+                }}
+                onPress={() => console.log('onClick:', item.data.originalName)}
+                underlayColor={item.highlighted ? 'blue' : 'yellow'}
             >
-                <View style={{ justifyContent: 'center', alignContent: 'center'}}>
-                    <Text>{item.originalName}</Text>
+                <View style={{ justifyContent: 'center', alignContent: 'center', backgroundColor: item.highlighted ? 'blue' : 'red'}}>
+                    <Text numberOfLines={1}>{item.data.originalName}</Text>
+                    <Text>{timestampToString(item.data.startTimestamp)}</Text>
                 </View>
             </TouchableHighlight>
         );

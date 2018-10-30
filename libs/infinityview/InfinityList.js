@@ -31,6 +31,7 @@ export {
     ListTypeHorizontal, 
     ListTypeVertical,
 };
+
 export default class InfinityList extends React.PureComponent<TProps> {
 
     _layout: ListLayout;

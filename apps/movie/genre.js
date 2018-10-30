@@ -31,7 +31,8 @@ export default class extends Component<Props> {
             <Query query={MOVIES} variables={{ tagID: tag }}>
                 {({ data, error, loading }) => {
                     if(loading) return null;
-                    
+                    if(error) return null;
+
                     return (
                         <View style={{ width: '100%', height: '50%', top: '25%' }}>
                             <FlatList
@@ -50,16 +51,13 @@ export default class extends Component<Props> {
     _renderMovie = ({ item: { node: { name, media } }, index, separators }) => {
         return (
             <TouchableHighlight
-                hasTVPreferredFocus={index === 0}
                 style={{ width: 350, height: '100%', padding: 5, }}
                 onPress={() => console.log('onClick:', name)}
             >
-                <View >
-                    <Image 
-                        style={{ width: '100%', height: '100%' }}
-                        source={{ uri: media.portrait }}
-                    />
-                </View>
+                <Image 
+                    style={{ width: '100%', height: '100%' }}
+                    source={{ uri: media.portrait }}
+                />
             </TouchableHighlight>
         );
     }
