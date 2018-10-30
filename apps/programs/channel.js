@@ -70,33 +70,15 @@ export default class extends Component<Props> {
                         if(loading) return null;
 
                         return (
-                            <View style={{ width: '100%', height: '20%', top: '40%' }}>
-                                <FlatList
-                                    data={unwrapData(data)}
-                                    horizontal
-                                    keyExtractor={({ id }) => id }
-                                    renderItem={this._renderChannel}
-                                    onEndReached={() => {
-                                        this._from = this._to;
-                                        this._to = getTimestamp(4, this._to);
-                                    
-                                        fetchMore({
-                                            variables: { channel, from: this._from, to: this._to },
-                                            updateQuery: (prev, { fetchMoreResult }) => {
-                                                if (!fetchMoreResult) return prev;
-
-                                                fetchMoreResult.channels.edges[0].node.programs = [
-                                                    ...unwrapData(prev),
-                                                    ...unwrapData(fetchMoreResult, 1),
-                                                ];
-
-                                                return fetchMoreResult;
-                                            }
-                                        })
-                                    }}
-                                    onEndReachedThreshold={0.1}
-                                />
-                            </View>
+                            <InfinityList 
+                                style={{ width: '100%', height: '20%', top: '40%' }}
+                                listType={ListTypeHorizontal}
+                                requestData={ (request: ListRequest) => request.update(unwrapData(data)) }
+                                requestKey={(program) => program.id}
+                                requestSize={() => 400}
+                                requestPadding={ () => 10 }
+                                renderItem={(layoutItem) => this._renderChannel({ item: layoutItem.data })}
+                            />
                         );
                     }}
                 </Query>
