@@ -76,6 +76,18 @@ export default class extends Component<Props> {
                                 ref={(list) => this._list = list}
                                 renderItem={this._renderChannel}
                                 requestData={(request: ListRequest) => request.completeWithData(unwrapData(data)) }
+                                requestDataAfter={(request: ListRequest) => fetchMore({
+                                    variables: { channel, from: request.item.data.endTimestamp, to: getTimestamp(4, request.item.data.endTimestamp) },
+                                    updateQuery: (previousResult, { fetchMoreResult }) => {
+                                        request.completeWithData(unwrapData(fetchMoreResult, 1));
+                                    }
+                                })}
+                                requestDataBefore={(request: ListRequest) => fetchMore({
+                                    variables: { channel, from: getTimestamp(-4, request.item.data.startTimestamp), to: request.item.data.startTimestamp },
+                                    updateQuery: (previousResult, { fetchMoreResult }) => {
+                                        request.completeWithData(unwrapData(fetchMoreResult, 1));
+                                    }
+                                })}
                                 requestKey={(data) => data.id}
                                 requestSize={() => 400 }
                                 requestPadding={() => 5 }
